@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Class 10 Notes</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5f7fb; margin:0; padding:20px; }
+    h1 { text-align:center; }
+    .subject { background:#fff; margin:20px auto; padding:20px; border-radius:8px; max-width:900px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    .chapter { margin-top:15px; }
+    .chapter-title { font-weight:bold; cursor:pointer; }
+    ul { margin-top:8px; }
+    li { margin:6px 0; }
+    a { text-decoration:none; color:#1a73e8; }
+    a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+
+<h1>Class 10 Study Materials</h1>
+<p style="text-align:center">Click a chapter to see available PDFs</p>
+
+<div class="subject">
+  <h2>Life Science</h2>
+  <div id="life-science"></div>
+</div>
+
+<div class="subject">
+  <h2>Physical Science</h2>
+  <div id="physical-science"></div>
+</div>
+
+<div class="subject">
+  <h2>Mathematics</h2>
+  <div id="mathematics"></div>
+</div>
+
+<script>
+const GITHUB_USERNAME = "mondaldeeptendu-create";
+const REPO_NAME = "class_10_notes";
+const BRANCH = "main";
+
+async function loadChapter(containerId, path, title) {
+  const container = document.getElementById(containerId);
+  const chapterDiv = document.createElement('div');
+  chapterDiv.className = 'chapter';
+  chapterDiv.innerHTML = `<div class="chapter-title">${title}</div><ul></ul>`;
+  container.appendChild(chapterDiv);
+
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${path}?ref=${BRANCH}`);
+    const data = await res.json();
+    const ul = chapterDiv.querySelector('ul');
+
+    data.filter(f => f.name.endsWith('.pdf')).forEach(file => {
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="${file.download_url}" target="_blank">${file.name}</a>`;
+      ul.appendChild(li);
+    });
+
+    if (ul.children.length === 0) {
+      ul.innerHTML = '<li>No PDFs uploaded yet</li>';
+    }
+  } catch (e) {
+    chapterDiv.querySelector('ul').innerHTML = '<li>Folder not found</li>';
+  }
+}
+
+// ===== AUTO LOAD ALL CHAPTERS =====
+async function loadSubject(containerId, subjectPath) {
+  const container = document.getElementById(containerId);
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${subjectPath}?ref=${BRANCH}`);
+    const folders = await res.json();
+
+    for (const folder of folders.filter(f => f.type === 'dir')) {
+      await loadChapter(containerId, `${subjectPath}/${folder.name}`, folder.name);
+    }
+  } catch (e) {
+    container.innerHTML = '<p>Unable to load chapters</p>';
+  }
+}
+
+loadSubject('life-science', 'life-science');
+loadSubject('physical-science', 'physical-science');
+loadSubject('mathematics', 'mathematics');
+</script>
+
+</body>
+</html>
